@@ -6,5 +6,8 @@
     <string name="action_settings">Settings</string>
     <string name="add_record">Добавить запись</string>
     <string name="delete_record">Удалить запись</string>
+    <string name="edit_record">Редактировать</string>
+    <string name="status_done">Выполнено</string>
+    <string name="status_during">В процессе</string>
 
 </resources>

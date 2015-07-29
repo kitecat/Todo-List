@@ -18,11 +18,13 @@ public class DB {
     public static final String COLUMN_ID = "_id";
     public static final String COLUMN_IMG = "img";
     public static final String COLUMN_TXT = "txt";
+    public static final String COLUMN_STATUS = "status";
 
     private static final String DB_CREATE = "create table " + DB_TABLE + "(" +
             COLUMN_ID + " integer primary key autoincrement, " +
             COLUMN_IMG + " integer, " +
-            COLUMN_TXT + " text" + ");";
+            COLUMN_TXT + " text, " +
+            COLUMN_STATUS + " status" + ");";
 
     private final Context mCtx;
 
@@ -51,11 +53,19 @@ public class DB {
         ContentValues cv = new ContentValues();
         cv.put(COLUMN_TXT, txt);
         cv.put(COLUMN_IMG, img);
+        cv.put(COLUMN_STATUS, "new");
         mDB.insert(DB_TABLE, null, cv);
     }
 
     public void delRec(Long id) {
         mDB.delete(DB_TABLE, COLUMN_ID + " = " + id, null);
+    }
+
+    public void editStatus(Long id, String txt) {
+        ContentValues updatedValues = new ContentValues();
+        updatedValues.put(COLUMN_STATUS, txt);
+        String where = COLUMN_ID + "=" + id;
+        mDB.update(DB_TABLE, updatedValues, where, null);
     }
 
     private class DBHelper extends SQLiteOpenHelper {
@@ -67,13 +77,6 @@ public class DB {
         @Override
         public void onCreate(SQLiteDatabase db) {
             db.execSQL(DB_CREATE);
-
-            ContentValues cv = new ContentValues();
-            for (int i = 1; i < 5; i++) {
-                cv.put(COLUMN_TXT, "sometext " + i);
-                cv.put(COLUMN_IMG, R.drawable.ic_launcher);
-                db.insert(DB_TABLE, null, cv);
-            }
         }
 
         @Override

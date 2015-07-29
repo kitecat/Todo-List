@@ -22,7 +22,10 @@ import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor> {
 
-    private static final int CM_DELETE_ID = 1;
+    private static final int CM_DELETE_ID = 2;
+    private static final int CM_EDIT_ID = 3;
+    private static final int CM_STATUS1_ID = 1;
+    private static final int CM_STATUS2_ID = 4;
 
     private EditText editText;
 
@@ -42,8 +45,8 @@ public class MainActivity extends FragmentActivity implements LoaderManager.Load
         db = new DB(this);
         db.open();
 
-        String[] from = new String[] { DB.COLUMN_IMG, DB.COLUMN_TXT };
-        int[] to = new int[] { R.id.ivImg, R.id.tvText };
+        String[] from = new String[] { DB.COLUMN_IMG, DB.COLUMN_TXT, DB.COLUMN_STATUS };
+        int[] to = new int[] { R.id.ivImg, R.id.tvText, R.id.textView1 };
 
         scAdapter = new SimpleCursorAdapter(this, R.layout.item, null, from, to, 0);
         listView = (ListView) findViewById(R.id.listView);
@@ -58,10 +61,14 @@ public class MainActivity extends FragmentActivity implements LoaderManager.Load
         String note = editText.getText().toString();
         db.addRec(note, R.drawable.ic_launcher);
         getSupportLoaderManager().getLoader(0).forceLoad();
+        scAdapter.notifyDataSetChanged();
     }
 
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
+        menu.add(0, CM_EDIT_ID, 0, R.string.edit_record);
+        menu.add(0, CM_STATUS1_ID, 0, R.string.status_done);
+        menu.add(0, CM_STATUS2_ID, 0, R.string.status_during);
         menu.add(0, CM_DELETE_ID, 0, R.string.delete_record);
     }
 
@@ -70,6 +77,21 @@ public class MainActivity extends FragmentActivity implements LoaderManager.Load
             AdapterView.AdapterContextMenuInfo acmi = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
             db.delRec(acmi.id);
             getSupportLoaderManager().getLoader(0).forceLoad();
+            scAdapter.notifyDataSetChanged();
+            return true;
+        }
+        if (item.getItemId() == CM_STATUS1_ID) {
+            AdapterView.AdapterContextMenuInfo acmi = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+            db.editStatus(acmi.id, "done");
+            getSupportLoaderManager().getLoader(0).forceLoad();
+            scAdapter.notifyDataSetChanged();
+            return true;
+        }
+        if (item.getItemId() == CM_STATUS2_ID) {
+            AdapterView.AdapterContextMenuInfo acmi = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+            db.editStatus(acmi.id, "during");
+            getSupportLoaderManager().getLoader(0).forceLoad();
+            scAdapter.notifyDataSetChanged();
             return true;
         }
         return super.onContextItemSelected(item);
