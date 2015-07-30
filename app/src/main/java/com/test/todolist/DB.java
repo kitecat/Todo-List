@@ -16,13 +16,11 @@ public class DB {
     private static final String DB_TABLE = "mytab";
 
     public static final String COLUMN_ID = "_id";
-    public static final String COLUMN_IMG = "img";
     public static final String COLUMN_TXT = "txt";
     public static final String COLUMN_STATUS = "status";
 
     private static final String DB_CREATE = "create table " + DB_TABLE + "(" +
             COLUMN_ID + " integer primary key autoincrement, " +
-            COLUMN_IMG + " integer, " +
             COLUMN_TXT + " text, " +
             COLUMN_STATUS + " status" + ");";
 
@@ -49,10 +47,9 @@ public class DB {
         return mDB.query(DB_TABLE, null, null, null, null, null, null);
     }
 
-    public void addRec(String txt, int img) {
+    public void addRec(String txt) {
         ContentValues cv = new ContentValues();
         cv.put(COLUMN_TXT, txt);
-        cv.put(COLUMN_IMG, img);
         cv.put(COLUMN_STATUS, "new");
         mDB.insert(DB_TABLE, null, cv);
     }

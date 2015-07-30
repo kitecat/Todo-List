@@ -45,8 +45,8 @@ public class MainActivity extends FragmentActivity implements LoaderManager.Load
         db = new DB(this);
         db.open();
 
-        String[] from = new String[] { DB.COLUMN_IMG, DB.COLUMN_TXT, DB.COLUMN_STATUS };
-        int[] to = new int[] { R.id.ivImg, R.id.tvText, R.id.textView1 };
+        String[] from = new String[] { DB.COLUMN_TXT, DB.COLUMN_STATUS };
+        int[] to = new int[] { R.id.tvText, R.id.textView1 };
 
         scAdapter = new SimpleCursorAdapter(this, R.layout.item, null, from, to, 0);
         listView = (ListView) findViewById(R.id.listView);
@@ -59,7 +59,7 @@ public class MainActivity extends FragmentActivity implements LoaderManager.Load
 
     public void onButtonClick(View view) {
         String note = editText.getText().toString();
-        db.addRec(note, R.drawable.ic_launcher);
+        db.addRec(note);
         getSupportLoaderManager().getLoader(0).forceLoad();
         scAdapter.notifyDataSetChanged();
     }
@@ -128,11 +128,6 @@ public class MainActivity extends FragmentActivity implements LoaderManager.Load
         @Override
         public Cursor loadInBackground() {
             Cursor cursor = db.getAllData();
-            try  {
-                TimeUnit.SECONDS.sleep(3);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
             return cursor;
         }
     }
