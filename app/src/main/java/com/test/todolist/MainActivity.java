@@ -1,39 +1,45 @@
 package com.test.todolist;
 
 import android.content.Context;
-import android.database.Cursor;
+import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.LoaderManager;
-import android.support.v4.content.CursorLoader;
-import android.support.v4.content.Loader;
-import android.support.v4.widget.CursorAdapter;
 import android.support.v4.widget.SimpleCursorAdapter;
+import android.support.v7.app.ActionBarActivity;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.SimpleAdapter;
 
-import java.util.concurrent.TimeUnit;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonParser;
+
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 
-public class MainActivity extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor> {
+public class MainActivity extends ActionBarActivity {
 
     private static final int CM_DELETE_ID = 2;
     private static final int CM_EDIT_ID = 3;
     private static final int CM_STATUS1_ID = 1;
     private static final int CM_STATUS2_ID = 4;
 
+    private ArrayList<String> listItems = new ArrayList();
     private EditText editText;
 
-    final String ATTRIBUTE_NAME_TEXT = "text";
-
     ListView listView;
-    DB db;
-    SimpleCursorAdapter scAdapter;
+    ArrayAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,26 +48,51 @@ public class MainActivity extends FragmentActivity implements LoaderManager.Load
 
         editText = (EditText) findViewById(R.id.editText);
 
-        db = new DB(this);
-        db.open();
-
-        String[] from = new String[] { DB.COLUMN_TXT, DB.COLUMN_STATUS };
-        int[] to = new int[] { R.id.tvText, R.id.textView1 };
-
-        scAdapter = new SimpleCursorAdapter(this, R.layout.item, null, from, to, 0);
         listView = (ListView) findViewById(R.id.listView);
-        listView.setAdapter(scAdapter);
+
+        SharedPreferences prefs = getSharedPreferences("MAIN_STORAGE", Context.MODE_PRIVATE);
+
+        try {
+            listItems = (ArrayList<String>) ObjectSerializer.deserialize(prefs.getString("note", ObjectSerializer.serialize(new ArrayList<String>())));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, listItems);
+
+        listView.setAdapter(adapter);
 
         registerForContextMenu(listView);
-
-        getSupportLoaderManager().initLoader(0, null, this);
     }
 
     public void onButtonClick(View view) {
         String note = editText.getText().toString();
-        db.addRec(note);
-        getSupportLoaderManager().getLoader(0).forceLoad();
-        scAdapter.notifyDataSetChanged();
+        saveObject(note);
+        adapter.notifyDataSetChanged();
+    }
+
+    public void saveObject(String string) {
+        SharedPreferences.Editor editor = getSharedPreferences("MAIN_STORAGE", Context.MODE_PRIVATE).edit();
+        listItems.add(string);
+        try {
+            editor.putString("note" ,ObjectSerializer.serialize(listItems));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        editor.commit();
+        adapter.notifyDataSetChanged();
+    }
+
+    public void loadList() {
+        SharedPreferences prefs = getSharedPreferences("MAIN_STORAGE", Context.MODE_PRIVATE);
+
+        try {
+            listItems = (ArrayList<String>) ObjectSerializer.deserialize(prefs.getString("note", ObjectSerializer.serialize(new ArrayList<String>())));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        adapter.notifyDataSetChanged();
     }
 
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
@@ -75,61 +106,34 @@ public class MainActivity extends FragmentActivity implements LoaderManager.Load
     public boolean onContextItemSelected(MenuItem item) {
         if (item.getItemId() == CM_DELETE_ID) {
             AdapterView.AdapterContextMenuInfo acmi = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
-            db.delRec(acmi.id);
-            getSupportLoaderManager().getLoader(0).forceLoad();
-            scAdapter.notifyDataSetChanged();
+
+            listItems.remove(acmi.position);
+
+            SharedPreferences.Editor editor = getSharedPreferences("MAIN_STORAGE", Context.MODE_PRIVATE).edit();
+            try {
+                editor.putString("note" ,ObjectSerializer.serialize(listItems));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            editor.commit();
+            loadList();
             return true;
         }
         if (item.getItemId() == CM_STATUS1_ID) {
             AdapterView.AdapterContextMenuInfo acmi = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
-            db.editStatus(acmi.id, "done");
+            //db.editStatus(acmi.id, "done");
             getSupportLoaderManager().getLoader(0).forceLoad();
-            scAdapter.notifyDataSetChanged();
+            //scAdapter.notifyDataSetChanged();
             return true;
         }
         if (item.getItemId() == CM_STATUS2_ID) {
             AdapterView.AdapterContextMenuInfo acmi = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
-            db.editStatus(acmi.id, "during");
+            //db.editStatus(acmi.id, "during");
             getSupportLoaderManager().getLoader(0).forceLoad();
-            scAdapter.notifyDataSetChanged();
+            //scAdapter.notifyDataSetChanged();
             return true;
         }
         return super.onContextItemSelected(item);
-    }
-
-    protected void onDestroy() {
-        super.onDestroy();
-        db.close();
-    }
-
-    @Override
-    public Loader<Cursor> onCreateLoader(int id, Bundle bndl) {
-        return new MyCursorLoader(this, db);
-    }
-
-    @Override
-    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
-        scAdapter.swapCursor(cursor);
-    }
-
-    @Override
-    public void onLoaderReset(Loader<Cursor> loader) {
-    }
-
-    static class MyCursorLoader extends CursorLoader {
-
-        DB db;
-
-        public MyCursorLoader(Context context, DB db) {
-            super(context);
-            this.db = db;
-        }
-
-        @Override
-        public Cursor loadInBackground() {
-            Cursor cursor = db.getAllData();
-            return cursor;
-        }
     }
 
     @Override
