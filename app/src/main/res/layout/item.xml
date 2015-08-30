@@ -31,7 +31,7 @@
             android:textAppearance="?android:attr/textAppearanceSmall"
             android:text="new"
             android:layout_marginLeft="5dp"
-            android:id="@+id/textView1" />
+            android:id="@+id/textViewStatus" />
     </LinearLayout>
 
 </LinearLayout>

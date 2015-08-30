@@ -3,29 +3,17 @@ package com.test.todolist;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.support.v4.widget.SimpleCursorAdapter;
 import android.support.v7.app.ActionBarActivity;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.SimpleAdapter;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonParser;
-
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -35,11 +23,11 @@ public class MainActivity extends ActionBarActivity {
     private static final int CM_STATUS1_ID = 1;
     private static final int CM_STATUS2_ID = 4;
 
-    private ArrayList<String> listItems = new ArrayList();
+    private ArrayList<Note> listItems = new ArrayList();
     private EditText editText;
 
     ListView listView;
-    ArrayAdapter adapter;
+    MyAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,12 +41,12 @@ public class MainActivity extends ActionBarActivity {
         SharedPreferences prefs = getSharedPreferences("MAIN_STORAGE", Context.MODE_PRIVATE);
 
         try {
-            listItems = (ArrayList<String>) ObjectSerializer.deserialize(prefs.getString("note", ObjectSerializer.serialize(new ArrayList<String>())));
+            listItems = (ArrayList<Note>) ObjectSerializer.deserialize(prefs.getString("note", ObjectSerializer.serialize(new ArrayList<Note>())));
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, listItems);
+        adapter = new MyAdapter(this, listItems);
 
         listView.setAdapter(adapter);
 
@@ -66,28 +54,33 @@ public class MainActivity extends ActionBarActivity {
     }
 
     public void onButtonClick(View view) {
-        String note = editText.getText().toString();
-        saveObject(note);
+        String noteText = editText.getText().toString();
+        saveObject(noteText);
         adapter.notifyDataSetChanged();
     }
 
     public void saveObject(String string) {
+        Note note = new Note(string);
+        listItems.add(note);
+        save();
+        adapter.notifyDataSetChanged();
+    }
+
+    public void save() {
         SharedPreferences.Editor editor = getSharedPreferences("MAIN_STORAGE", Context.MODE_PRIVATE).edit();
-        listItems.add(string);
         try {
             editor.putString("note" ,ObjectSerializer.serialize(listItems));
         } catch (IOException e) {
             e.printStackTrace();
         }
         editor.commit();
-        adapter.notifyDataSetChanged();
     }
 
     public void loadList() {
         SharedPreferences prefs = getSharedPreferences("MAIN_STORAGE", Context.MODE_PRIVATE);
 
         try {
-            listItems = (ArrayList<String>) ObjectSerializer.deserialize(prefs.getString("note", ObjectSerializer.serialize(new ArrayList<String>())));
+            listItems = (ArrayList<Note>) ObjectSerializer.deserialize(prefs.getString("note", ObjectSerializer.serialize(new ArrayList<Note>())));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -109,28 +102,22 @@ public class MainActivity extends ActionBarActivity {
 
             listItems.remove(acmi.position);
 
-            SharedPreferences.Editor editor = getSharedPreferences("MAIN_STORAGE", Context.MODE_PRIVATE).edit();
-            try {
-                editor.putString("note" ,ObjectSerializer.serialize(listItems));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            editor.commit();
-            loadList();
+            save();
+            adapter.notifyDataSetChanged();
             return true;
         }
         if (item.getItemId() == CM_STATUS1_ID) {
             AdapterView.AdapterContextMenuInfo acmi = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
-            //db.editStatus(acmi.id, "done");
-            getSupportLoaderManager().getLoader(0).forceLoad();
-            //scAdapter.notifyDataSetChanged();
+            (listItems.get(acmi.position)).setStatusDone();
+            save();
+            adapter.notifyDataSetChanged();
             return true;
         }
         if (item.getItemId() == CM_STATUS2_ID) {
             AdapterView.AdapterContextMenuInfo acmi = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
-            //db.editStatus(acmi.id, "during");
-            getSupportLoaderManager().getLoader(0).forceLoad();
-            //scAdapter.notifyDataSetChanged();
+            (listItems.get(acmi.position)).setStatusDuring();
+            save();
+            adapter.notifyDataSetChanged();
             return true;
         }
         return super.onContextItemSelected(item);
