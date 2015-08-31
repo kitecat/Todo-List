@@ -1,6 +1,7 @@
 package com.test.todolist;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
@@ -34,12 +35,9 @@ public class MainActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        editText = (EditText) findViewById(R.id.editText);
-
         listView = (ListView) findViewById(R.id.listView);
 
         SharedPreferences prefs = getSharedPreferences("MAIN_STORAGE", Context.MODE_PRIVATE);
-
         try {
             listItems = (ArrayList<Note>) ObjectSerializer.deserialize(prefs.getString("note", ObjectSerializer.serialize(new ArrayList<Note>())));
         } catch (IOException e) {
@@ -47,16 +45,8 @@ public class MainActivity extends ActionBarActivity {
         }
 
         adapter = new MyAdapter(this, listItems);
-
         listView.setAdapter(adapter);
-
         registerForContextMenu(listView);
-    }
-
-    public void onButtonClick(View view) {
-        String noteText = editText.getText().toString();
-        saveObject(noteText);
-        adapter.notifyDataSetChanged();
     }
 
     public void saveObject(String string) {
@@ -120,6 +110,13 @@ public class MainActivity extends ActionBarActivity {
             adapter.notifyDataSetChanged();
             return true;
         }
+        if (item.getItemId() == CM_EDIT_ID) {
+            AdapterView.AdapterContextMenuInfo acmi = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+            Intent intent = new Intent(MainActivity.this, EditActivity.class);
+            intent.putExtra("LIST_ITEMS", listItems);
+            intent.putExtra("ID", acmi.position);
+            startActivity(intent);
+        }
         return super.onContextItemSelected(item);
     }
 
@@ -138,7 +135,10 @@ public class MainActivity extends ActionBarActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.action_add_note) {
+            Intent intent = new Intent(MainActivity.this, AddActivity.class);
+            intent.putExtra("LIST_ITEMS", listItems);
+            startActivity(intent);
             return true;
         }
 
