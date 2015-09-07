@@ -9,5 +9,6 @@
     <string name="edit_record">Редактировать</string>
     <string name="status_done">Выполнено</string>
     <string name="status_during">В процессе</string>
+    <string name="save_note">Сохранить</string>
 
 </resources>
